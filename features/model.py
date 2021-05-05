@@ -612,7 +612,7 @@ def select_feature_association(conn, table_name, year, cohort_features, cohort_y
     else:
         pvals = rsp
 
-    return [ret for ret, pval in zip(rs, pvals) if pval < maximum_p_value]
+    return [ret for ret, pval in zip(rs, pvals) if pval <= maximum_p_value]
 
 
 def select_associations_to_all_features(conn, table, year, cohort_id, feature, maximum_p_value, feature_set=lambda x: True, correction=None):

@@ -272,7 +272,7 @@ def associations_to_all_features(
     statistics and associated P values.
     """
     feature = to_qualifiers(obj["feature"])
-    maximum_p_value = obj["maximum_p_value"]
+    maximum_p_value = obj.get("maximum_p_value", 1)
     correction = obj.get("correction")
     return_value = model.select_associations_to_all_features(
         conn,
