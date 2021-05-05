@@ -96,7 +96,7 @@ def knowledge_graph_node(node_name, table, filter_regex, biolink_class):
         })
     
 
-def knowledge_graph_edge(source_id, node_name, table, filter_regex, feature_property):
+def knowledge_graph_edge(source_id, node_name, table, filter_regex, feature_property, extended_attributes):
     node_ids = name_to_ids(table, filter_regex, node_name)
     if len(node_ids) == 0:
         return Nothing
@@ -110,7 +110,9 @@ def knowledge_graph_edge(source_id, node_name, table, filter_regex, feature_prop
             "id": gen_edge_id(source_id, node_name, node_id),
             "source_id": source_id,
             "target_id": node_id,
-            "edge_attributes": feature_property
+            "edge_attributes": feature_property if extended_attributes else [{
+                k: v for k, v in properties.items() if k in ["feature_a", "feature_b", "p_value", "chi_squared"]
+            } for properties in feature_property]
         })
     
 
@@ -119,7 +121,7 @@ def supported(supported_types, x):
     logger.info(f"supported: supported_types = {supported_types}, x = {x}, return value = {ret}")
     return ret
 
-def get(conn, query):
+def get(conn, query, extended_attributes):
     try:
         message = query.get("message", query)
         query_options = query.get("query_options", {})
@@ -183,7 +185,7 @@ def get(conn, query):
             
             knowledge_graph_node(feature_name, table, filter_regex, biolink_class).bind(lambda node: add_node(nodes, node))
 
-            knowledge_graph_edge(source_curie, feature_name, table, filter_regex, feature).bind(lambda edge: knowledge_graph_edges.append(edge))
+            knowledge_graph_edge(source_curie, feature_name, table, filter_regex, feature, extended_attributes).bind(lambda edge: knowledge_graph_edges.append(edge))
 
             result(source_id, cohort_id, edge_id, feature_name, target_id, table, filter_regex, p_value, "p value").bind(lambda item: results.append(item))
             
@@ -444,7 +446,7 @@ def add_node(nodes, node):
         node_curr["name"] += f",{node['name']}"
 
     
-def one_hop(conn, query):
+def one_hop(conn, query, extended_attributes):
     try:
         message = query["message"]
         query_options = query.get("query_options", {})
@@ -509,7 +511,7 @@ def one_hop(conn, query):
         for feature_name, (biolink_class, feature_list) in feature_set.items():
             knowledge_graph_node(feature_name, table, filter_regex, biolink_class).bind(lambda node: add_node(nodes, node))
 
-            knowledge_graph_edge(source_curie, feature_name, table, filter_regex, feature_list).bind(lambda edge: knowledge_graph_edges.append(edge))
+            knowledge_graph_edge(source_curie, feature_name, table, filter_regex, feature_list, extended_attributes).bind(lambda edge: knowledge_graph_edges.append(edge))
     
             result(source_id, source_curie, edge_id, feature_name, target_id, table, filter_regex, p_values(feature_list), "p value").bind(lambda item: results.append(item))
 
