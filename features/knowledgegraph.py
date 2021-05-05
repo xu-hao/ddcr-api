@@ -125,6 +125,7 @@ def get(conn, query, extended_attributes):
     try:
         message = query.get("message", query)
         query_options = query.get("query_options", {})
+        correction = query_options.get("correction")
         cohort_id, table, year, cohort_features, size = message_cohort(conn, query_options)
         maximum_p_value = query["query_options"].get("maximum_p_value", MAX_P_VAL_DEFAULT)
         filter_regex = query["query_options"].get("regex", ".*")
@@ -169,7 +170,7 @@ def get(conn, query, extended_attributes):
 
         supported_types = closure_subtype(target_node_type)
 
-        feature_list = select_associations_to_all_features(conn, table, year, cohort_id, feature, maximum_p_value, partial(supported, supported_types))
+        feature_list = select_associations_to_all_features(conn, table, year, cohort_id, feature, maximum_p_value, partial(supported, supported_types), correction)
         logger.info(f"cohort_id = {cohort_id}, feature_list = {feature_list}")
         if not isinstance(feature_list, list):
             raise RuntimeError("cohort error")
@@ -450,6 +451,7 @@ def one_hop(conn, query, extended_attributes):
     try:
         message = query["message"]
         query_options = query.get("query_options", {})
+        correction = query_options.get("correction")
         cohort_id, table, year, cohort_features, size = message_cohort(conn, query_options)
         maximum_p_value = query.get("query_options", {}).get("maximum_p_value", MAX_P_VAL_DEFAULT)
         filter_regex = query.get("query_options", {}).get("regex", ".*")
@@ -489,7 +491,7 @@ def one_hop(conn, query, extended_attributes):
 
         for source_node_feature_name in source_node_feature_names:
             feature = query_feature(table, source_node_feature_name).value
-            ataf = select_associations_to_all_features(conn, table, year, cohort_id, feature, maximum_p_value, feature_set=partial(supported, supported_types))
+            ataf = select_associations_to_all_features(conn, table, year, cohort_id, feature, maximum_p_value, feature_set=partial(supported, supported_types), correction=correction)
             # logger.info(f"one_hop: cohort_id = {cohort_id}, feature = {feature}, maximum_p_value = {maximum_p_value}, ataf = {ataf}")
             for feature in ataf:
                 feature_name = feature["feature_b"]["feature_name"]
